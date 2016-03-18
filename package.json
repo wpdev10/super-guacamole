@@ -1,0 +1,20 @@
+{
+  "name": "super-guacamole",
+  "version": "1.0.0",
+  "description": "Super Guacamole!",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dkfiresky/super-guacamole.git"
+  },
+  "author": "Dmitry Kholodilin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dkfiresky/super-guacamole/issues"
+  },
+  "homepage": "https://github.com/dkfiresky/super-guacamole#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-header": "^1.7.1",
+    "gulp-minify": "0.0.5"
+  }
+}
