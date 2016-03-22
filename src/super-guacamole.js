@@ -1,4 +1,4 @@
-( function( $ ) {
+( function( $, undefined ) {
 
   var default_templates = {
     menu: '<ul class="%1$s">' +
@@ -39,8 +39,10 @@
     this.children = settings.children;
     this.templates = settings.templates;
     this.$container = settings.container;
-    this.visible = false;
-    this.$node = null;
+    this.visible = true;
+    this.node = null;
+    this.attachedNode = null;
+    this.options = {}; // Shared options
   }
 
   /**
@@ -51,10 +53,16 @@
    * @return {Menu}
    */
   Menu.prototype.setVisibility = function( flag ) {
-    this.visible = !( ! flag );
+    var self = this;
 
-    if ( this.$node && this.$node.length > 0 ) {
-      this.$node.css( 'display', flag ? 'inherit' : 'none' );
+    flag = !( ! flag );
+    self.visible = ! flag;
+
+    if ( self.node && self.attachedNode ) {
+      [ self.node, self.attachedNode ].forEach( function( node ) {
+        node.style.display = flag ? 'inherit' : 'none';
+        node.querySelector( 'a' ).style.color = flag ? 'green' : 'red';
+      } );
     }
 
     return this;
@@ -74,7 +82,26 @@
    * Get visible children count
    * @return {number} Visible children count
    */
-  Menu.prototype.countVisibleChildren = function() {
+  Menu.prototype.countVisibleChildNodes = function() {
+    var count = 0,
+      index;
+
+    for ( index = 0; index < this.children.length; index++ ) {
+      if ( this.children[ index ].isVisible() ) {
+        count++;
+      }
+    }
+
+    this.children.map( function( child ) {
+      if ( child.isVisible() ) {
+        count++;
+      }
+    } );
+
+    return count;
+  }
+
+  Menu.prototype.countVisibleChildNodes = function() {
     var count = 0,
       index;
 
@@ -85,14 +112,22 @@
     }
 
     return count;
-  }
+  };
 
   /**
-   * Get menu `this.$node`
+   * Get menu `this.node`
    * @return {jQuery}
    */
   Menu.prototype.getNode = function() {
-    return this.$node;
+    return this.node;
+  };
+
+  /**
+   * Return attached node to the menu element
+   * @return {jQuery}
+   */
+  Menu.prototype.getAttachedNode = function() {
+    return this.attachedNode;
   };
 
   /**
@@ -100,37 +135,68 @@
    * @param  {jQuery} $node Menu node
    */
   Menu.prototype.setNode = function( $node ) {
-    this.$node = $node;
+    this.node = $node;
+  };
+
+  /**
+   * Attach a node to the menu element
+   * @param  {jQuery} $node Node element
+   */
+  Menu.prototype.attachNode = function( $node ) {
+    this.attachedNode = $node;
   };
 
   /**
    * Cache children selectors
-   * @param  {jQuery} $nodes jQuery nodes
+   * @param  {jQuery} $nodes         jQuery nodes.
+   * @param  {jQuery} $attachNodes   jQuery nodes.
    * @return {Menu}
    */
-  Menu.prototype.cache = function( $nodes ) {
+  Menu.prototype.cache = function( $nodes, $attachedNodes ) {
     var self = this;
 
     self.children.forEach( function( child, index ) {
-      if ( $nodes.indexOf( index ) > -1 ) {
+      if ( undefined !== $nodes[ index ] ) {
         child.setNode( $nodes[ index ] );
-        self.children[ index ] = child;
       }
+
+      if ( undefined !== $attachedNodes[ index ] ) {
+        child.attachNode( $attachedNodes[ index ] );
+      }
+
+      self.children[ index ] = child;
     } );
 
     return self;
   };
 
   /**
+   * Set options
+   * @param {Object} options Options object
+   * @return {Menu}
+   */
+  Menu.prototype.setOptions = function( options ) {
+    this.options = options;
+    return this;
+  };
+
+  /**
+   * Get options
+   * @return {Object}
+   */
+  Menu.prototype.getOptions = function() {
+    return this.options;
+  };
+
+  /**
    * Render the menu
    *
    * @access private
-   * @param {boolean} append Append content or replace it.
-   * @return {string}
+   * @return {Menu}
    */
-  Menu.prototype.render = function( append ) {
+  Menu.prototype.render = function() {
     var self = this,
-      $menu = null,
+      $menu = self.options.$menu,
       _children_render = [];
 
     function _render( children_render ) {
@@ -160,18 +226,17 @@
     }
 
     if ( self.$container ) {
-      if ( self.$container.find( '.super-guacamole__menu' ).length > 0 ) {
-        $menu = self.$container.find( '.super-guacamole__menu' );
-        self.cache( $menu.children( '.super-guacamole__menu__child' ) );
+      self.$container[ self.options.append ? 'append' : 'html' ]( _render( _render_children().join( '\n' ) ) );
 
-        return self;
-      }
+      self.cache(
+        self.$container.find( '.super-guacamole__menu__child' ),
+        $menu.children( self.options.children_filter )
+      );
 
-      self.$container[ append ? 'append' : 'html' ]( _render( _render_children().join( '\n' ) ) );
       return self;
-    } else {
-      return _render( _render_children().join( '\n' ) );
     }
+
+    return self;
   };
 
   /**
@@ -187,8 +252,8 @@
 
     $elements.each( function( index, element ) {
       arr.push( new Menu( {
-        href: $( element ).attr( 'href' ),
-        title: $( element ).find( 'a:first' ).text()
+        href: element.getAttribute( 'href' ),
+        title: element.querySelector( 'a:first-child' ).innerText
       } ) );
     } );
 
@@ -196,18 +261,44 @@
   };
 
   /**
+   * Check if attached nodes fit `$parent` container
+   * @param  {jQuery}   $parent Parent node.
+   * @return {boolean}
+   */
+  Menu.prototype.attachedNodesFit = function( $parent ) {
+    var self = this,
+      width = 0,
+      $node,
+      maxWidth = $parent.width();
+
+    self.children.forEach( function( child ) {
+      $node = $( child.getAttachedNode() );
+
+      if ( 0 < $node.length && $node.is( ':visible' ) ) {
+        width += $node.width();
+      }
+    } );
+
+    if ( width > maxWidth ) {
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
    * Watch handler.
    *
    * @access private
-   * @param  {jQuery}      $menu    Parent element which contains the menu.
-   * @param  {object}      options  Options object.
    * @return {boolean}
    */
-  Menu.prototype.watch = function( $menu, options ) {
+  Menu.prototype.watch = function() {
     var self = this,
+      $menu = self.options.$menu,
       _timeout = null,
       _index = -1,
-      _visibility = false;
+      _visibility = false,
+      _visibleChildrenCount = 0;
 
     /**
      * Handle `onresize` event
@@ -216,18 +307,22 @@
       clearTimeout( _timeout );
 
       _timout = setTimeout( function() {
+        self.children.forEach( function() { // ?
 
-        if ( self.countVisibleChildren() > options.min_children ) {
-          _index = self.children.length - 1;
-          _visibility = true;
-        } else {
-          _index = 0;
-          _visibility = false;
-        }
+          _visibleChildrenCount = self.countVisibleChildren();
 
-        if ( -1 < _index && -1 < self.children.indexOf( _index ) ) {
-          self.children[ _index ].setVisibility( _visibility );
-        }
+          if ( _visibleChildrenCount > self.options.min_children ) {
+            _index = self.children.length - 1;
+            _visibility = self.attachedNodesFit( $menu );
+          } else {
+            _index = _visibleChildrenCount - 1;
+            _visibility = true;
+          }
+
+          if ( -1 < _index && undefined !== self.children[ _index ] ) {
+            self.children[ _index ].setVisibility( _visibility );
+          }
+        } );
       }, 200 );
     }
 
@@ -266,14 +361,14 @@
       container: settings.container
     } );
 
-    the_menu.render( settings.append );
+    settings.$menu = $menu;
 
-    the_menu.watch( $menu, {
-      min_children: settings.min_children,
-      children_filter: settings.children_filter,
-      threshold: settings.threshold,
-      append: settings.append
-    } );
+    the_menu.setOptions( settings )
+      .render()
+      .watch();
+
+    // @TODO REMOVE THIS AFTER DEVELOPMENT IS FINISHED
+    window.the_menu = the_menu;
   };
 
 } ( jQuery ) );

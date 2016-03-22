@@ -35,8 +35,8 @@ function unlinkDir( dirpath ) {
 };
 
 gulp.task( 'unlink.published', unlink( path.join( DIST, 'super-guacamole.js' ) ) );
-gulp.task( 'unlink.dist', unlinkDir( './dist/' ) );
-gulp.task( 'unlink', [ 'unlink.published', 'unlink.dist' ] );
+gulp.task( 'unlink.published.min', unlink( path.join( DIST, 'super-guacamole.min.js' ) ) );
+gulp.task( 'unlink', [ 'unlink.published', 'unlink.published.min' ] );
 
 gulp.task( 'dist', [ 'unlink' ], () => {
   gulp.src( './src/*.js' )
@@ -50,13 +50,10 @@ gulp.task( 'dist', [ 'unlink' ], () => {
         filepath.extname = '.min.js';
       }
     } ) )
-    .pipe( gulp.dest( './dist/' ) );
-} );
-
-gulp.task( 'default', [ 'dist' ], () => {
-  gulp.src( './dist/super-guacamole.js' )
     .pipe( gulp.dest( DIST ) );
 } );
+
+gulp.task( 'default', [ 'dist' ] );
 
 gulp.task( 'watch', () => {
   gulp.watch( './src/*.js', [ 'default' ] );
