@@ -328,33 +328,32 @@
 
       return function _debounced( $jqEvent ) {
         function _delayed() {
-          self.forEach( function( child ) {
-            _attachedNodesCount = self.countVisibleAttachedNodes();
-            _visibility = self.attachedNodesFit( $menu );
-            _index = _attachedNodesCount - 1;
 
-            if ( _attachedNodesCount < self.options.min_children ) {
-              _visibility = true;
-              _index = _attachedNodesCount + 1;
-            }
+          _attachedNodesCount = self.countVisibleAttachedNodes();
+          _visibility = self.attachedNodesFit( $menu );
+          _index = _attachedNodesCount - 1;
 
-            if ( self.has( _index ) ) {
-              node = self.get( _index );
-              $attachedNode = $( node.getAttachedNode() );
+          if ( _attachedNodesCount < self.options.min_children ) {
+            _visibility = true;
+            _index = _attachedNodesCount + 1;
+          }
 
-              $menu.find( self.options.children_filter ).each( function() {
-                if ( $( this ).index() > $attachedNode.index() ) {
-                  $(this)[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
-                }
-              } );
+          if ( self.has( _index ) ) {
+            node = self.get( _index );
+            $attachedNode = $( node.getAttachedNode() );
 
-              self.$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ).each( function() {
-                if ( $( this ).index() < $attachedNode.index() ) {
-                  $(this)[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
-                }
-              } );
-            }
-          } );
+            $menu.find( self.options.children_filter ).each( function() {
+              if ( $( this ).index() >= $attachedNode.index() ) {
+                $( this )[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
+              }
+            } );
+
+            self.$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ).each( function() {
+              if ( $( this ).index() < $attachedNode.index() ) {
+                $( this )[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
+              }
+            } );
+          }
 
           timeout = null;
         }
