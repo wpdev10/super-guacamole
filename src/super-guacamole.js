@@ -110,7 +110,7 @@
    */
   Menu.prototype.countVisibleAttachedNodes = function() {
     var self = this,
-      count = 0;
+      count = -1;
 
     self.forEach( function( child ) {
       if ( false === $( child.getAttachedNode() ).hasClass( 'super-guacamole__menu__hidden' ) ) {
@@ -290,20 +290,26 @@
    */
   Menu.prototype.attachedNodesFit = function( $parent ) {
     var self = this,
-      width = 0,
-      $node,
-      maxWidth = $parent.width();
+      width = 0, _width = 0,
+      $node, $attachNode,
+      _flag,
+      maxWidth = $parent.width() - self.$container.find( '.super-guacamole__menu' ).width();
 
     self.children.forEach( function( child ) {
-      $node = $( child.getAttachedNode() );
+      $attachedNode = $( child.getAttachedNode() );
+      $node = $( child.getNode() );
 
-      if ( 0 < $node.length &&
-           false === $node.hasClass( 'super-guacamole__menu__hidden' ) ) {
-        width += $node.width();
+      _width = $attachedNode.outerWidth( true );
+      if ( 0 < _width ) {
+        $attachedNode.data( 'width', _width );
       }
+      width += $attachedNode.data( 'width' );
+      _flag = width > maxWidth;
+      $attachedNode[ _flag ? 'addClass' : 'removeClass' ]( 'super-guacamole__menu__hidden' );
+      $node[ ! _flag ? 'addClass' : 'removeClass' ]( 'super-guacamole__menu__hidden' );
     } );
 
-    return !( width > maxWidth );
+    return true;
   };
 
   /**
@@ -328,33 +334,7 @@
 
       return function _debounced( $jqEvent ) {
         function _delayed() {
-
-          _attachedNodesCount = self.countVisibleAttachedNodes();
-          _visibility = self.attachedNodesFit( $menu );
-          _index = _attachedNodesCount - 1;
-
-          if ( _attachedNodesCount < self.options.min_children ) {
-            _visibility = true;
-            _index = _attachedNodesCount + 1;
-          }
-
-          if ( self.has( _index ) ) {
-            node = self.get( _index );
-            $attachedNode = $( node.getAttachedNode() );
-
-            $menu.find( self.options.children_filter ).each( function() {
-              if ( $( this ).index() >= $attachedNode.index() ) {
-                $( this )[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
-              }
-            } );
-
-            self.$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ).each( function() {
-              if ( $( this ).index() < $attachedNode.index() ) {
-                $( this )[ _visibility ? 'removeClass' : 'addClass' ]( 'super-guacamole__menu__hidden' );
-              }
-            } );
-          }
-
+          self.attachedNodesFit( $menu );
           timeout = null;
         }
 
@@ -367,11 +347,12 @@
     }
 
     if ( once ) {
-      _debounce( 1 );
+      _debounce( 0 );
       return self;
     }
 
-    $( window ).on( 'resize', _debounce( 1000 ) );
+    $( window ).on( 'resize', _debounce( 300 ) );
+
     return self;
   };
 
@@ -383,7 +364,11 @@
    */
   $.fn.superGuacamole = function( options ) {
     var defaults,
-      styles = '<style> .super-guacamole__menu__hidden { display: none !important; } </style>',
+      styles = '<style>\
+        .super-guacamole__menu__hidden { display: none !important; }\
+        .main-navigation { flex: none !important; display: block !important; }\
+        .main-navigation > .menu { display: inline-block !important; }\
+      </style>',
       settings,
       $menu = $( this ),
       $children,
@@ -415,6 +400,7 @@
 
     the_menu.setOptions( settings )
       .render()
+      .watch( true )
       .watch();
 
     // @TODO REMOVE THIS AFTER DEVELOPMENT IS FINISHED
