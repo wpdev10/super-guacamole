@@ -293,7 +293,14 @@
       width = 0, _width = 0,
       $node, $attachNode,
       _flag,
-      maxWidth = $parent.width() - self.$container.find( '.super-guacamole__menu' ).width();
+      maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
+
+    self.children.forEach( function( child ) {
+      $attachedNode = $( child.getAttachedNode() );
+      $node = $( child.getNode() );
+      $attachedNode.removeClass( 'super-guacamole__menu__hidden' );
+      $node.addClass( 'super-guacamole__menu__hidden' );
+    } );
 
     self.children.forEach( function( child ) {
       $attachedNode = $( child.getAttachedNode() );
@@ -303,10 +310,13 @@
       if ( 0 < _width ) {
         $attachedNode.data( 'width', _width );
       }
+
       width += $attachedNode.data( 'width' );
-      _flag = width > maxWidth;
-      $attachedNode[ _flag ? 'addClass' : 'removeClass' ]( 'super-guacamole__menu__hidden' );
-      $node[ ! _flag ? 'addClass' : 'removeClass' ]( 'super-guacamole__menu__hidden' );
+
+      if ( width > maxWidth ) {
+        $attachedNode.addClass( 'super-guacamole__menu__hidden' );
+        $node.removeClass( 'super-guacamole__menu__hidden' );
+      }
     } );
 
     return true;
@@ -328,6 +338,10 @@
       $attachedNode;
 
     once = once || false;
+    if ( once ) {
+      self.attachedNodesFit( $menu );
+      return self;
+    }
 
     function _debounce( threshold ) {
       var _timeout;
@@ -344,11 +358,6 @@
 
         _timeout = setTimeout( _delayed, threshold );
       };
-    }
-
-    if ( once ) {
-      _debounce( 0 );
-      return self;
     }
 
     $( window ).on( 'resize', _debounce( 300 ) );
@@ -400,11 +409,7 @@
 
     the_menu.setOptions( settings )
       .render()
-      .watch( true )
       .watch();
-
-    // @TODO REMOVE THIS AFTER DEVELOPMENT IS FINISHED
-    window.the_menu = the_menu;
   };
 
 } ( jQuery ) );
