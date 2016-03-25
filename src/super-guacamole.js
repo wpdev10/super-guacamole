@@ -119,7 +119,24 @@
     } );
 
     return count;
-  }
+  };
+
+  /**
+   * Count the visible nodes
+   * @return {number}
+   */
+  Menu.prototype.countVisibleNodes = function() {
+    var self = this,
+      count = 0;
+
+    self.forEach( function( child ) {
+      if ( false === $( child.getNode() ).hasClass( 'super-guacamole__menu__hidden' ) ) {
+        count++;
+      }
+    } );
+
+    return count;
+  };
 
   /**
    * Count the `{Menu}` nodes
@@ -292,7 +309,7 @@
     var self = this,
       width = 0, _width = 0,
       $node, $attachNode,
-      _flag,
+      _flag, _menu_flag
       maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
 
     self.children.forEach( function( child ) {
@@ -318,6 +335,9 @@
         $node.removeClass( 'super-guacamole__menu__hidden' );
       }
     } );
+
+    _menu_flag = self.countVisibleNodes() === 0;
+    self.$container.find( '.super-guacamole__menu' )[ _menu_flag ? 'addClass' : 'removeClass' ]( 'super-guacamole__menu__hidden' );
 
     return true;
   };
@@ -374,6 +394,7 @@
   $.fn.superGuacamole = function( options ) {
     var defaults,
       styles = '<style>\
+        .main-navigation > .super-guacamole__menu.super-guacamole__menu__hidden,\
         .super-guacamole__menu__hidden { display: none !important; }\
         .main-navigation { flex: none !important; display: block !important; }\
         .main-navigation > .menu { display: inline-block !important; }\
@@ -409,6 +430,7 @@
 
     the_menu.setOptions( settings )
       .render()
+      .watch( true )
       .watch();
   };
 
