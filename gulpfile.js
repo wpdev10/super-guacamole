@@ -8,8 +8,8 @@ const gulp = require( 'gulp' ),
   path = require( 'path' ),
   pkg = JSON.parse( fs.readFileSync( './package.json' ) );
 
-const DIST = path.join( process.env.WWW_ROOT,
-'wordpress.local', 'www', 'wp-content', 'themes',
+const DIST = path.join( process.env.WPDEV_PATH,
+'wp-content', 'themes',
 'blank', 'assets', 'js' );
 
 function unlink( filepath ) {
