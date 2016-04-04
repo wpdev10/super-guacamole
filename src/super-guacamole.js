@@ -26,7 +26,7 @@
 
     defaults = {
       href: '#',
-      title: 'More',
+      title: '&middot;&middot;&middot;',
       children: [],
       templates: default_templates,
       container: null
@@ -119,7 +119,24 @@
     } );
 
     return count;
-  }
+  };
+
+  /**
+   * Count the visible nodes
+   * @return {number}
+   */
+  Menu.prototype.countVisibleNodes = function() {
+    var self = this,
+      count = 0;
+
+    self.forEach( function( child ) {
+      if ( false === $( child.getNode() ).hasClass( 'super-guacamole__menu__hidden' ) ) {
+        count++;
+      }
+    } );
+
+    return count;
+  };
 
   /**
    * Count the `{Menu}` nodes
@@ -271,8 +288,8 @@
       $element = $( element );
 
       child = new Menu( {
-        href: $element.attr( 'href' ),
-        title: $element.find( 'a:first-child' ).text()
+        href: $element.children( 'a' ).attr( 'href' ),
+        title: $element.children( 'a' ).text()
       } );
 
       child.attachNode( $element );
@@ -292,7 +309,7 @@
     var self = this,
       width = 0, _width = 0,
       $node, $attachNode,
-      _flag,
+      _flag, _menu_flag
       maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
 
     self.children.forEach( function( child ) {
@@ -311,7 +328,7 @@
         $attachedNode.data( 'width', _width );
       }
 
-      width += $attachedNode.data( 'width' );
+      width += $attachedNode.data( 'width' ) + 50;
 
       if ( width > maxWidth ) {
         $attachedNode.addClass( 'super-guacamole__menu__hidden' );
@@ -320,6 +337,32 @@
     } );
 
     return true;
+  };
+
+  /**
+   * Check if menu fit & has children
+   */
+  Menu.prototype.menuFit = function() {
+    var self = this,
+      fn = 'removeClass',
+      breakpoint = self.options.threshold || 768;
+
+    if ( 0 === self.countVisibleNodes() ) {
+      fn = 'addClass';
+    }
+
+    if ( breakpoint >= $( window ).width() ) {
+      self.children.forEach( function( child ) {
+        $attachedNode = $( child.getAttachedNode() );
+        $node = $( child.getNode() );
+        $attachedNode.removeClass( 'super-guacamole__menu__hidden' );
+        $node.addClass( 'super-guacamole__menu__hidden' );
+      } );
+
+      fn = 'addClass';
+    }
+
+    self.$container.find( '.super-guacamole__menu' )[ fn ]( 'super-guacamole__menu__hidden' );
   };
 
   /**
@@ -338,8 +381,14 @@
       $attachedNode;
 
     once = once || false;
-    if ( once ) {
+
+    function watcher() {
       self.attachedNodesFit( $menu );
+      self.menuFit();
+    }
+
+    if ( once ) {
+      watcher();
       return self;
     }
 
@@ -348,7 +397,7 @@
 
       return function _debounced( $jqEvent ) {
         function _delayed() {
-          self.attachedNodesFit( $menu );
+          watcher();
           timeout = null;
         }
 
@@ -360,7 +409,7 @@
       };
     }
 
-    $( window ).on( 'resize', _debounce( 300 ) );
+    $( window ).on( 'resize', _debounce( 10 ) );
 
     return self;
   };
@@ -374,9 +423,12 @@
   $.fn.superGuacamole = function( options ) {
     var defaults,
       styles = '<style>\
+        .main-navigation > .super-guacamole__menu.super-guacamole__menu__hidden,\
         .super-guacamole__menu__hidden { display: none !important; }\
-        .main-navigation { flex: none !important; display: block !important; }\
-        .main-navigation > .menu { display: inline-block !important; }\
+        @media (min-width: ${breakpoint}px) {\
+          .main-navigation { flex: none !important; display: block !important; }\
+          .main-navigation > .menu { display: inline-block !important; }\
+        }\
       </style>',
       settings,
       $menu = $( this ),
@@ -384,19 +436,21 @@
       the_menu;
 
     defaults = {
-      threshold: 400, // Minimal menu width, when this plugin activates
+      threshold: 544, // Minimal menu width, when this plugin activates
+      breakpoint: 576, // Breakpoint on which menu completely deactivates
       min_children: 3, // Minimal visible children count
       children_filter: 'li', // Child elements selector
-      menu_title: 'More', // Menu title
+      menu_title: '&middot;&middot;&middot;', // Menu title
       templates: default_templates, // Templates
       container: null, // Parent element, which should contain the menu
       append: true // Append contents or replace it
     };
 
-    // Append styles
-    $( document.head ).append( styles );
-
     settings  = $.extend( defaults, options );
+
+    // Append styles
+    $( document.head ).append( styles.replace( /\$\{breakpoint\}/g, settings.breakpoint ) );
+
     $children = $menu.children( settings.children_filter );
     the_menu  = new Menu( {
       title:     settings.menu_title,
@@ -409,6 +463,7 @@
 
     the_menu.setOptions( settings )
       .render()
+      .watch( true )
       .watch();
   };
 
