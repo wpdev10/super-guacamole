@@ -329,7 +329,6 @@
       }
 
       width += $attachedNode.data( 'width' );
-      width += ( $attachedNode.data( 'width' ) - $attachedNode.width() );
 
       if ( width > maxWidth && index >= self.options.min_children ) {
         $attachedNode.addClass( 'super-guacamole__menu__hidden' );
