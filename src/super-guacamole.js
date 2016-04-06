@@ -112,7 +112,7 @@
     var self = this,
       count = -1;
 
-    self.forEach( function( child ) {
+    self.children.forEach( function( child ) {
       if ( false === $( child.getAttachedNode() ).hasClass( 'super-guacamole__menu__hidden' ) ) {
         count++;
       }
@@ -129,7 +129,7 @@
     var self = this,
       count = 0;
 
-    self.forEach( function( child ) {
+    self.children.forEach( function( child ) {
       if ( false === $( child.getNode() ).hasClass( 'super-guacamole__menu__hidden' ) ) {
         count++;
       }
@@ -146,7 +146,7 @@
     var self = this,
       count = 0;
 
-    self.forEach( function( child ) {
+    self.children.forEach( function( child ) {
       if ( child.isVisible() ) {
         count++;
       }
@@ -196,7 +196,7 @@
   Menu.prototype.cache = function( $nodes, $attachedNodes ) {
     var self = this;
 
-    self.forEach( function( child, index ) {
+    self.children.forEach( function( child, index ) {
       child.setNode( $nodes[ index ] );
       child.attachNode( $attachedNodes[ index ] );
     } );
@@ -319,7 +319,7 @@
       $node.addClass( 'super-guacamole__menu__hidden' );
     } );
 
-    self.children.forEach( function( child ) {
+    self.children.forEach( function( child, index ) {
       $attachedNode = $( child.getAttachedNode() );
       $node = $( child.getNode() );
 
@@ -328,9 +328,10 @@
         $attachedNode.data( 'width', _width );
       }
 
-      width += $attachedNode.data( 'width' ) + 50;
+      width += $attachedNode.data( 'width' );
+      width += ( $attachedNode.data( 'width' ) - $attachedNode.width() );
 
-      if ( width > maxWidth ) {
+      if ( width > maxWidth && index >= self.options.min_children ) {
         $attachedNode.addClass( 'super-guacamole__menu__hidden' );
         $node.removeClass( 'super-guacamole__menu__hidden' );
       }
@@ -341,17 +342,21 @@
 
   /**
    * Check if menu fit & has children
+   * @param {bool}  [flag] Apply the class or return boolean.
+   * @return {bool}
    */
-  Menu.prototype.menuFit = function() {
+  Menu.prototype.menuFit = function( flag ) {
     var self = this,
       fn = 'removeClass',
-      breakpoint = self.options.threshold || 768;
+      threshold = self.options.threshold || 768;
+
+    flag = flag || false;
 
     if ( 0 === self.countVisibleNodes() ) {
       fn = 'addClass';
     }
 
-    if ( breakpoint >= $( window ).width() ) {
+    if ( threshold >= $( window ).width() ) {
       self.children.forEach( function( child ) {
         $attachedNode = $( child.getAttachedNode() );
         $node = $( child.getNode() );
@@ -362,7 +367,11 @@
       fn = 'addClass';
     }
 
-    self.$container.find( '.super-guacamole__menu' )[ fn ]( 'super-guacamole__menu__hidden' );
+    if ( ! flag ) {
+      self.$container.find( '.super-guacamole__menu' )[ fn ]( 'super-guacamole__menu__hidden' );
+    }
+
+    return fn === 'removeClass';
   };
 
   /**
