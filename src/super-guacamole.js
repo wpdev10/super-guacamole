@@ -418,6 +418,7 @@
     }
 
     $( window ).on( 'resize', _debounce( 10 ) );
+    $( window ).on( 'orientationchange', _debounce( 10 ) );
 
     return self;
   };
