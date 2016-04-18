@@ -1,3 +1,9 @@
+/**
+ * super-guacamole - Super Guacamole!
+ * @version v1.0.4
+ * @link https://github.com/dkfiresky/super-guacamole#readme
+ * @license MIT
+*/
 ( function( $, undefined ) {
 
 	var defaultTemplates = {
@@ -365,7 +371,7 @@
 			fn = 'attr';
 		}
 
-		if ( threshold >= $( window ).width() ) {
+		if ( ( threshold - 1 ) >= $( window ).width() ) {
 			self.children.forEach( function( child ) {
 				$attachedNode = $( child.getAttachedNode() );
 				$node = $( child.getNode() );
@@ -448,7 +454,6 @@
 
 		defaults = {
 			threshold:			544, // Minimal menu width, when this plugin activates
-			breakpoint:			576, // Breakpoint on which menu completely deactivates
 			minChildren: 		3, // Minimal visible children count
 			childrenFilter: 	'li', // Child elements selector
 			menuTitle:			'&middot;&middot;&middot;', // Menu title
