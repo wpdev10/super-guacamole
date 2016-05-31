@@ -1,6 +1,6 @@
 /**
  * super-guacamole - Super Guacamole!
- * @version v1.1
+ * @version v1.1.1
  * @link https://github.com/dkfiresky/super-guacamole#readme
  * @license MIT
 */
