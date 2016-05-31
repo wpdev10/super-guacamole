@@ -298,8 +298,8 @@
 			$element = $( element );
 
 			child = new Menu( {
-				href: $element.children( 'a' ).attr( 'href' ),
-				title: $element.children( 'a' ).text()
+				href: $element.find( 'a[href]:first' ).attr( 'href' ),
+				title: $element.find( 'a[href]:first' ).text()
 			} );
 
 			child.attachNode( $element );
