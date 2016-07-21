@@ -1,6 +1,6 @@
 /**
  * super-guacamole - Super Guacamole!
- * @version v1.1
+ * @version v1.1.2
  * @link https://github.com/dkfiresky/super-guacamole#readme
  * @license MIT
 */
@@ -132,7 +132,7 @@
 	*/
 	Menu.prototype.countVisibleNodes = function() {
 		var self = this,
-		count = 0;
+			count = 0;
 
 		self.children.forEach( function( child ) {
 			if ( ! $( child.getNode() ).attr( 'hidden' ) ) {
@@ -236,8 +236,8 @@
 	*/
 	Menu.prototype.render = function() {
 		var self = this,
-		$menu = self.options.$menu,
-		_children_render = [];
+			$menu = self.options.$menu,
+			_children_render = [];
 
 		function _render( children_render ) {
 			children_render = children_render || '';
@@ -291,15 +291,17 @@
 	*/
 	Menu.extract = function( $elements ) {
 		var arr = [],
-		$element,
-		child;
+			$element,
+			$anchor,
+			child;
 
 		$elements.each( function( index, element ) {
 			$element = $( element );
+			$anchor = $element.find( 'a[href]:first' );
 
 			child = new Menu( {
-				href: $element.find( 'a[href]:first' ).attr( 'href' ),
-				title: $element.find( 'a[href]:first' ).text()
+				href: $anchor.attr( 'href' ),
+				title: $anchor.get( 0 ).childNodes[0].data
 			} );
 
 			child.attachNode( $element );
@@ -475,9 +477,9 @@
 		settings.$menu = $main_menu;
 
 		the_menu.setOptions( settings )
-		.render()
-		.watch( true )
-		.watch();
+			.render()
+			.watch( true )
+			.watch();
 	};
 
 } ( jQuery ) );
