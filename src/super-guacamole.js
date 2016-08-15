@@ -265,7 +265,8 @@
 				.replace( 2, menu.href )
 				.replace( 3, menu.title )
 				.replace( 4, ( 0 < menu.children.length ? children : '' ) )
-				.get();
+				.get()
+				.replace( '<ul class="sub-menu"></ul>', '' );
 		}
 
 		function render( children ) {
@@ -339,7 +340,6 @@
 		_width = 0,
 		$node,
 		$attachNode,
-		lastVisible = null,
 		maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
 
 		self.children.forEach( function( child ) {
@@ -360,16 +360,9 @@
 
 			width += $attachedNode.data( 'width' );
 
-			if ( lastVisible ) {
-				$( lastVisible.getAttachedNode() ).removeAttr( 'hidden' );
-				$( lastVisible.getNode() ).attr( 'hidden', true );
-			}
-
 			if ( width > maxWidth ) {
 				$attachedNode.attr( 'hidden', true );
 				$node.removeAttr( 'hidden' );
-			} else {
-				lastVisible = child;
 			}
 		} );
 
