@@ -1,9 +1,3 @@
-/**
- * super-guacamole - Super Guacamole!
- * @version v1.1.2
- * @link https://github.com/dkfiresky/super-guacamole#readme
- * @license MIT
-*/
 ( function( $, undefined ) {
 
 	var defaultTemplates = {
@@ -14,6 +8,7 @@
 		child_wrap: '<ul>%s</ul>',
 		child: '<li class="%1$s">' +
 					'<a href="%2$s">%3$s</a>' +
+					'<ul class="sub-menu"></ul>' +
 				'</li>'
 	};
 
@@ -236,49 +231,63 @@
 	*/
 	Menu.prototype.render = function() {
 		var self = this,
-			$menu = self.options.$menu,
-			_children_render = [];
+			menuTpl = self.templates.menu,
+			childTpl = self.templates.child,
+			$container = self.$container,
+			$menu = self.options.$menu;
 
-		function _render( children_render ) {
-			children_render = children_render || '';
+		function replace( str, num, value ) {
+			var originalStr = str.replace( new RegExp( '\\%' + num + '\\$s', 'g' ), value );
 
-			return self.templates.menu.replace( /\%1\$s/g, 'super-guacamole__menu menu-item' + ( '' === children_render ? '' : ' menu-item-has-children' ) )
-				.replace( /\%2\$s/g, self.href )
-				.replace( /\%3\$s/g, self.title )
-				.replace( /\%4\$s/g,
-					children_render ?
-						self.templates.child_wrap
-							.replace( /\%1\$s/g, 'sub-menu' )
-							.replace( /\%2\$s/g, children_render )
-					: '' )
-		}
-
-		function _render_children() {
-			_children_render = [];
-
-			self.children.forEach( function( child ) {
-				if ( child instanceof Menu ) {
-				_children_render.push(
-					self.templates.child.replace( /\%1\$s/g, 'super-guacamole__menu__child menu-item' )
-							 .replace( /\%2\$s/g, child.href )
-							 .replace( /\%3\$s/g, child.title )
-				);
+			pipes = {
+				replace: function( num, value ) {
+					replace( originalStr, num, value );
+					return pipes;
+				},
+				get: function() {
+					return originalStr;
 				}
+			};
+
+			return pipes;
+		};
+
+		function renderMenu( className, menu, isChild ) {
+			var children = '';
+
+			isChild = isChild || false;
+
+			menu.children.forEach( function( child ) {
+				children += renderMenu( 'super-guacamole__menu__child', child );
 			} );
 
-			return _children_render;
+			return replace( isChild ? childTpl : menuTpl, 1, className + ' menu-item' + ( 0 < menu.children.length ? ' menu-item-has-children' : '' ) )
+				.replace( 2, menu.href )
+				.replace( 3, menu.title )
+				.replace( 4, ( 0 < menu.children.length ? children : '' ) )
+				.get();
 		}
 
-		if ( self.$container ) {
-			self.$container.append( _render( _render_children().join( '\n' ) ) );
+		function render( children ) {
+			var render = '';
+
+			children.forEach( function( menu ) {
+				render += renderMenu( 'super-guacamole__menu', menu );
+			} );
+
+			return render;
+		}
+
+		if ( 0 < $container.length ) {
+			$container.append( render( [ self ] ) );
 
 			self.cache(
-				self.$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ),
+				$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ),
 				$menu.children( self.options.childrenFilter + ':not(.super-guacamole__menu):not(.super-guacamole__menu__child)' )
 			);
 		}
 
-		return self;
+		return this;
 	};
 
 	/**
@@ -293,7 +302,8 @@
 		var arr = [],
 			$element,
 			$anchor,
-			child;
+			child,
+			subChild;
 
 		$elements.each( function( index, element ) {
 			$element = $( element );
@@ -303,8 +313,15 @@
 				href: $anchor.attr( 'href' ),
 				title: $anchor.get( 0 ).childNodes[0].data
 			} );
-
 			child.attachNode( $element );
+
+			if ( -1 < $element.children( '.sub-menu' ).length ) {
+				subMenu = Menu.extract( $element.children( '.sub-menu' ).children( '.menu-item' ) );
+
+				subMenu.forEach( function( subChild ) {
+					child.set( subChild );
+				} );
+			}
 
 			arr.push( child );
 		} );
@@ -318,8 +335,11 @@
 	*/
 	Menu.prototype.attachedNodesFit = function() {
 		var self = this,
-		width = 0, _width = 0,
-		$node, $attachNode,
+		width = 0,
+		_width = 0,
+		$node,
+		$attachNode,
+		lastVisible = null,
 		maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
 
 		self.children.forEach( function( child ) {
@@ -340,9 +360,16 @@
 
 			width += $attachedNode.data( 'width' );
 
-			if ( width > maxWidth && index >= self.options.minChildren ) {
+			if ( lastVisible ) {
+				$( lastVisible.getAttachedNode() ).removeAttr( 'hidden' );
+				$( lastVisible.getNode() ).attr( 'hidden', true );
+			}
+
+			if ( width > maxWidth ) {
 				$attachedNode.attr( 'hidden', true );
 				$node.removeAttr( 'hidden' );
+			} else {
+				lastVisible = child;
 			}
 		} );
 
