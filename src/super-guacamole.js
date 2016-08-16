@@ -1,3 +1,9 @@
+/**
+ * super-guacamole - Super Guacamole! It's a script that hides your menu items if they don't fit the menu width.
+ * @version v1.1.3
+ * @link https://github.com/dkfiresky/super-guacamole#readme
+ * @license MIT
+*/
 ( function( $, undefined ) {
 
 	var defaultTemplates = {
@@ -100,6 +106,9 @@
 		return this.visible;
 	}
 
+	/**
+	 * forEach wrapper
+	 */
 	Menu.prototype.forEach = function( callback ) {
 		return this.children.forEach( callback );
 	};
