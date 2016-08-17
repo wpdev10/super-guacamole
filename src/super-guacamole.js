@@ -6,9 +6,9 @@
 				'%4$s' +
 			'</li>',
 		child_wrap: '<ul>%s</ul>',
-		child: '<li class="%1$s">' +
+		child: '<li class="%1$s" id="%5$s">' +
 					'<a href="%2$s">%3$s</a>' +
-					'<ul class="sub-menu"></ul>' +
+					'<ul class="sub-menu">%4$s</ul>' +
 				'</li>'
 	};
 
@@ -24,15 +24,17 @@
 			self = this;
 
 		defaults = {
+			id: '',
 			href: '',
 			title: '&middot;&middot;&middot;',
-			children: [],
+			children: {},
 			templates: {},
 			container: null
 		};
 
 		settings = $.extend( defaults, options );
 
+		self.id = settings.id;
 		self.href = settings.href;
 		self.title = settings.title;
 		self.children = settings.children;
@@ -50,16 +52,12 @@
 	 * @param	{number} [index] Optional index. If not specified, child will be added into the end.
 	 * @return {Menu}
 	*/
-	Menu.prototype.set = function( child, index ) {
+	Menu.prototype.set = function( child ) {
 		if ( false === child instanceof Menu ) {
 			throw new Error( 'Invalid argument type' );
 		}
 
-		if ( undefined === index ) {
-			this.children.push( child );
-		} else {
-			this.children[ index ] = child;
-		}
+		this.children[ child.id ] = child;
 
 		return this;
 	};
@@ -72,12 +70,53 @@
 	};
 
 	/**
-	 * Get child
+	 * Get menu item
 	 * @param	{number} index
 	 * @return {Menu}
 	*/
-	Menu.prototype.get = function( index ) {
-		return this.has( index ) ? this.children[ index ] : null;
+	Menu.prototype.get = function( id ) {
+		var menuItem = null;
+
+		this.map( id, function( _, child ) {
+			menuItem = child;
+			return child;
+		} );
+
+		return menuItem;
+	};
+
+	/**
+	 * Map through the items
+	 * @return {Menu}
+	*/
+	Menu.prototype.map = function( id, callback, children ) {
+		var menuItem = {
+				id: id
+			},
+			self = this;
+
+		if ( 'object' === id.constructor.name.toLowerCase() ) {
+			menuItem = id;
+		}
+
+		children = children || this.children;
+
+		if ( 0 >= children.length ) {
+			return menuItem;
+		}
+
+		Object.keys( children ).forEach( function( index ) {
+			child = children[ index ];
+			if ( menuItem.id === child.id ) {
+				children[ menuItem.id ] = callback( child );
+			} else {
+				if ( child.children && 0 < Object.keys( child.children ).length ) {
+					menuItem = self.map( menuItem, callback, child.children );
+				}
+			}
+		} );
+
+		return menuItem;
 	};
 
 	/**
@@ -115,8 +154,8 @@
 		var self = this,
 			count = -1;
 
-		self.children.forEach( function( child ) {
-			if ( ! $( child.getAttachedNode() ).attr( 'hidden' ) ) {
+		Object.keys( self.children ).forEach( function( index ) {
+			if ( ! $( self.children[ index ].getAttachedNode() ).attr( 'hidden' ) ) {
 				count++;
 			}
 		} );
@@ -130,9 +169,11 @@
 	*/
 	Menu.prototype.countVisibleNodes = function() {
 		var self = this,
-			count = 0;
+			count = 0,
+			child;
 
-		self.children.forEach( function( child ) {
+		Object.keys( self.children ).forEach( function( index ) {
+			child = self.children[ index ];
 			if ( ! $( child.getNode() ).attr( 'hidden' ) ) {
 				count++;
 			}
@@ -149,8 +190,8 @@
 		var self = this,
 			count = 0;
 
-		self.children.forEach( function( child ) {
-			if ( child.isVisible() ) {
+		Object.keys( self.children ).forEach( function( index ) {
+			if ( self.children[ index ].isVisible() ) {
 				count++;
 			}
 		} );
@@ -192,23 +233,6 @@
 	};
 
 	/**
-	 * Cache children selectors
-	 * @param	{jQuery} $nodes		 jQuery nodes.
-	 * @param	{jQuery} $attachNodes	 jQuery nodes.
-	 * @return {Menu}
-	*/
-	Menu.prototype.cache = function( $nodes, $attachedNodes ) {
-		var self = this;
-
-		self.children.forEach( function( child, index ) {
-			child.setNode( $nodes[ index ] );
-			child.attachNode( $attachedNodes[ index ] );
-		} );
-
-		return self;
-	};
-
-	/**
 	 * Set options
 	 * @param {Object} options Options object
 	 * @return {Menu}
@@ -237,7 +261,8 @@
 			menuTpl = self.templates.menu,
 			childTpl = self.templates.child,
 			$container = self.$container,
-			$menu = self.options.$menu;
+			$menu = self.options.$menu,
+			$el;
 
 		function replace( str, num, value ) {
 			var originalStr = str.replace( new RegExp( '\\%' + num + '\\$s', 'g' ), value );
@@ -256,27 +281,31 @@
 		};
 
 		function renderMenu( className, menu, isChild ) {
-			var children = '';
+			var children = '',
+				keys = Object.keys( menu.children );
 
 			isChild = isChild || false;
 
-			menu.children.forEach( function( child ) {
-				children += renderMenu( 'super-guacamole__menu__child', child );
+			keys.forEach( function( key ) {
+				children += renderMenu( 'super-guacamole__menu__child', menu.children[ key ] );
 			} );
 
-			return replace( isChild ? childTpl : menuTpl, 1, className + ' menu-item' + ( 0 < menu.children.length ? ' menu-item-has-children' : '' ) )
+			return replace( isChild ? childTpl : menuTpl, 1, className + ' menu-item' + ( 0 < keys.length ? ' menu-item-has-children' : '' ) )
 				.replace( 2, menu.href )
 				.replace( 3, menu.title )
-				.replace( 4, ( 0 < menu.children.length ? children : '' ) )
+				.replace( 4, ( 0 < keys.length ? children : '' ) )
+				.replace( 5, menu.id )
 				.get()
 				.replace( '<ul class="sub-menu"></ul>', '' );
 		}
 
 		function render( children ) {
-			var render = '';
+			var render = '',
+				id,
+				$current_el;
 
-			children.forEach( function( menu ) {
-				render += renderMenu( 'super-guacamole__menu', menu );
+			Object.keys( children ).forEach( function( key ) {
+				render += renderMenu( 'super-guacamole__menu', children[ key ] );
 			} );
 
 			return render;
@@ -285,10 +314,23 @@
 		if ( 0 < $container.length ) {
 			$container.append( render( [ self ] ) );
 
-			self.cache(
-				$container.find( '.super-guacamole__menu * .super-guacamole__menu__child' ),
-				$menu.children( self.options.childrenFilter + ':not(.super-guacamole__menu):not(.super-guacamole__menu__child)' )
-			);
+			$container.find( '.super-guacamole__menu__child' ).each( function() {
+				$current_el = $( this );
+				id = $( this ).attr( 'id' );
+				$el = $( '#' + id.replace( 'sg-', '' ) );
+
+				//console.log( $current_el.length, $el.length );
+
+				if ( 0 < $el.length ) {
+					console.log( id );
+					self.map( id, function( menuItem ) {
+						menuItem.attachNode( $el );
+						menuItem.setNode( $current_el );
+
+						return menuItem;
+					} );
+				}
+			} );
 		}
 
 		return this;
@@ -303,7 +345,7 @@
 	 * @return {array}			Array of Menu elements
 	*/
 	Menu.extract = function( $elements ) {
-		var arr = [],
+		var obj = {},
 			$element,
 			$anchor,
 			child,
@@ -314,6 +356,7 @@
 			$anchor = $element.find( 'a[href]:first' );
 
 			child = new Menu( {
+				id: 'sg-' + $element.attr( 'id' ),
 				href: $anchor.attr( 'href' ),
 				title: $anchor.get( 0 ).childNodes[0].data
 			} );
@@ -322,15 +365,16 @@
 			if ( -1 < $element.children( '.sub-menu' ).length ) {
 				subMenu = Menu.extract( $element.children( '.sub-menu' ).children( '.menu-item' ) );
 
-				subMenu.forEach( function( subChild ) {
+				Object.keys( subMenu ).forEach( function( key ) {
+					subChild = subMenu[ key ];
 					child.set( subChild );
 				} );
 			}
 
-			arr.push( child );
+			obj[ child.id ] = child;
 		} );
 
-		return arr;
+		return obj;
 	};
 
 	/**
@@ -343,16 +387,19 @@
 		_width = 0,
 		$node,
 		$attachNode,
+		child,
 		maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
 
-		self.children.forEach( function( child ) {
+		Object.keys( self.children ).forEach( function( key ) {
+			child = self.children[ key ];
 			$attachedNode = $( child.getAttachedNode() );
 			$node = $( child.getNode() );
 			$attachedNode.removeAttr( 'hidden' );
 			$node.attr( 'hidden', true );
 		} );
 
-		self.children.forEach( function( child, index ) {
+		Object.keys( self.children ).forEach( function( index ) {
+			child = child = self.children[ index ];
 			$attachedNode = $( child.getAttachedNode() );
 			$node = $( child.getNode() );
 
@@ -388,6 +435,7 @@
 				}
 			},
 			fn = 'removeAttr',
+			child,
 			threshold = self.options.threshold || 768;
 
 		flag = flag || false;
@@ -397,7 +445,8 @@
 		}
 
 		if ( ( threshold - 1 ) >= $( window ).width() ) {
-			self.children.forEach( function( child ) {
+			Object.keys( self.children ).forEach( function( index ) {
+				child = self.children[ index ];
 				$attachedNode = $( child.getAttachedNode() );
 				$node = $( child.getNode() );
 				$attachedNode.removeAttr( 'hidden' );
@@ -498,6 +547,8 @@
 		} );
 
 		settings.$menu = $main_menu;
+
+		window.__tm_sg = the_menu;
 
 		the_menu.setOptions( settings )
 			.render()
