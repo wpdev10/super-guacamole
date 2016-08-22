@@ -7,7 +7,7 @@
     "url": "git+https://github.com/dkfiresky/super-guacamole.git"
   },
   "author": "Dmitry Kholodilin",
-  "license": "MIT",
+  "license": "GPL-3.0+",
   "bugs": {
     "url": "https://github.com/dkfiresky/super-guacamole/issues"
   },

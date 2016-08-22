@@ -319,10 +319,7 @@
 				id = $( this ).attr( 'id' );
 				$el = $( '#' + id.replace( 'sg-', '' ) );
 
-				//console.log( $current_el.length, $el.length );
-
 				if ( 0 < $el.length ) {
-					console.log( id );
 					self.map( id, function( menuItem ) {
 						menuItem.attachNode( $el );
 						menuItem.setNode( $current_el );
@@ -388,7 +385,12 @@
 		$node,
 		$attachNode,
 		child,
-		maxWidth = self.$container.outerWidth( true ) - self.$container.find( '.super-guacamole__menu' ).outerWidth( true );
+		maxWidth = self.$container.outerWidth( true ) -
+			self.$container.find( '.super-guacamole__menu' ).outerWidth( true ) -
+			(
+				parseInt( $( '.header-container > .container' ).css( 'padding-left' ), 10 ) +
+				parseInt( $( '.header-container > .container' ).css( 'padding-left' ), 10 )
+			) / 2;
 
 		Object.keys( self.children ).forEach( function( key ) {
 			child = self.children[ key ];
