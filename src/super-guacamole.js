@@ -95,7 +95,7 @@
 			},
 			self = this;
 
-		if ( 'object' === id.constructor.name.toLowerCase() ) {
+		if ( typeof id !== 'string' ) {
 			menuItem = id;
 		}
 
