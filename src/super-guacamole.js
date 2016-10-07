@@ -385,11 +385,14 @@
 		$node,
 		$attachNode,
 		child,
+		$headerContainer = $( '.header-container > .container' ).length > 0 ?
+			$( '.header-container > .container' ) :
+			$( '.header-container > div' ),
 		maxWidth = self.$container.outerWidth( true ) -
 			self.$container.find( '.super-guacamole__menu' ).outerWidth( true ) -
 			(
-				parseInt( $( '.header-container > .container' ).css( 'padding-left' ), 10 ) +
-				parseInt( $( '.header-container > .container' ).css( 'padding-left' ), 10 )
+				parseInt( $headerContainer.css( 'padding-left' ), 10 ) +
+				parseInt( $headerContainer.css( 'padding-right' ), 10 )
 			) / 2;
 
 		Object.keys( self.children ).forEach( function( key ) {
@@ -446,7 +449,9 @@
 			fn = 'attr';
 		}
 
-		if ( ( threshold - 1 ) >= $( window ).width() ) {
+		if ( $( window ).width() <= ( threshold - 1 ) ) {
+			fn = 'attr';
+
 			Object.keys( self.children ).forEach( function( index ) {
 				child = self.children[ index ];
 				$attachedNode = $( child.getAttachedNode() );
@@ -454,8 +459,6 @@
 				$attachedNode.removeAttr( 'hidden' );
 				$node.attr( 'hidden', true );
 			} );
-
-			fn = 'attr';
 		}
 
 		if ( ! flag ) {
