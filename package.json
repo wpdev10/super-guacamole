@@ -1,6 +1,6 @@
 {
   "name": "super-guacamole",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Super Guacamole! It's a script that hides your menu items if they don't fit the menu width.",
   "repository": {
     "type": "git",
