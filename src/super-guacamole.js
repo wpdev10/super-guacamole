@@ -350,7 +350,7 @@
 
 		$elements.each( function( index, element ) {
 			$element = $( element );
-			$anchor = $element.find( 'a[href]:first' );
+			$anchor = $element.find( 'a:first' );
 
 			child = new Menu( {
 				id: 'sg-' + $element.attr( 'id' ),
