@@ -346,14 +346,33 @@
 			$element,
 			$anchor,
 			child,
-			subChild;
+			subChild,
+			uniqueID;
+
+		function getMenuID( $menuItem ) {
+			var id = '',
+				match = null,
+				regexp = /menu\-item\-[0-9]+/i;
+			$menuItem.attr( 'class' ).split( ' ' ).forEach( function( className ) {
+				match = regexp.exec( className );
+				if ( null !== match ) {
+					id = match[0];
+				}
+			} );
+			return id;
+		}
 
 		$elements.each( function( index, element ) {
 			$element = $( element );
 			$anchor = $element.find( 'a:first' );
+			menuId = $element.attr( 'id' );
+
+			if ( 'undefined' === typeof menuId ) {
+				menuId = getMenuID( $element );
+			}
 
 			child = new Menu( {
-				id: 'sg-' + $element.attr( 'id' ),
+				id: 'sg-' + menuId,
 				href: $anchor.attr( 'href' ),
 				title: $anchor.get( 0 ).childNodes[0].data
 			} );
