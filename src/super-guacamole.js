@@ -317,7 +317,11 @@
 			$container.find( '.super-guacamole__menu__child' ).each( function() {
 				$current_el = $( this );
 				id = $( this ).attr( 'id' );
-				$el = $( '#' + id.replace( 'sg-', '' ) );
+				$el = $container.find( '#' + id.replace( 'sg-', '' ) );
+
+				if ( 0 === $el.length ) {
+					$el = $container.find( '.' + id.replace( 'sg-', '' ) );
+				}
 
 				if ( 0 < $el.length ) {
 					self.map( id, function( menuItem ) {
@@ -571,8 +575,6 @@
 		} );
 
 		settings.$menu = $main_menu;
-
-		window.__tm_sg = the_menu;
 
 		the_menu.setOptions( settings )
 			.render()
